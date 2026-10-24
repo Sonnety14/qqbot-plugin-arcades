@@ -1,0 +1,22 @@
+{
+  "platform_id": {
+    "description": "QQ 平台实例 ID（必填，与 AstrBot 消息平台中的实例 ID 一致；留空不处理消息）",
+    "type": "string",
+    "default": ""
+  },
+  "sync_enabled": {
+    "description": "启用定时来源同步",
+    "type": "bool",
+    "default": true
+  },
+  "nearcade_enabled": {
+    "description": "启用 nearcade 数据源同步（当前唯一数据源，公开只读接口）",
+    "type": "bool",
+    "default": true
+  },
+  "legacy_scrape_enabled": {
+    "description": "应急回滚用：重新启用旧的全国音游地图网页抓取。默认关闭，开启后旧爬虫会重新运行，请仅在需要回滚时打开",
+    "type": "bool",
+    "default": false
+  }
+}
