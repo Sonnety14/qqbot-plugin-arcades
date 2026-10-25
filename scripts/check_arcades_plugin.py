@@ -98,11 +98,12 @@ async def main():
 
         assert (await send("增加舞萌")).sent == ["请联系管理员添加"]
         assert (await send("删除中二")).sent == ["请联系管理员删除"]
-        # 音游插件本身就在群聊一律拒绝（与群白名单无关），
-        # 这里断言它确实被拦下并给出转私聊提示。
-        group_rejected = await send("查舞萌", group="999")
-        assert group_rejected.stopped, "群聊里的音游命令必须被拦下"
-        assert any("请在私聊中使用" in str(m) for m in group_rejected.sent), group_rejected.sent
+        group_started = await send("查舞萌", group="999")
+        assert group_started.stopped and "当前聊天" in group_started.sent[0]
+        assert not (await send(group="998", components=[card])).stopped
+        assert not (await send(group="999", user="43", components=[card])).stopped
+        assert "没有可计算" in (await send(group="999", components=[card])).sent[0]
+        assert "管理操作" in (await send("增加舞萌", group="999", admin=True)).sent[0]
         assert not (await send("查舞萌", platform="other")).stopped
         assert not (await send("你好")).stopped
         assert "请先发送" in (await send(components=[card])).sent[0]
@@ -127,7 +128,7 @@ async def main():
         await send("删除中二", admin=True)
         preview = (await send(admin=True, components=[card])).sent[0]
         assert "确认删除" in preview and len(plugin.store.all("chuni")) == 2
-        state = plugin.sessions[("example-qq", "42")]
+        state = plugin.sessions[("example-qq", "private", "42")]
         ident = state["candidates"][0]
         assert "本次候选" in (await send("确认删除 fake", admin=True)).sent[0]
         assert "已从本地" in (await send("确认删除 " + ident, admin=True)).sent[0]
@@ -136,7 +137,7 @@ async def main():
         assert "格式" in (await send("bad input", admin=True)).sent[0]
         assert "取消" in (await send("取消音游操作")).sent[0]
         await send("查舞萌")
-        plugin.sessions[("example-qq", "42")]["expires"] = time.monotonic() - 1
+        plugin.sessions[("example-qq", "private", "42")]["expires"] = time.monotonic() - 1
         assert "请先发送" in (await send(components=[card])).sent[0]
         assert "来源更新" in (await send("音游地图状态")).sent[0]
         await plugin.initialize()

@@ -1,4 +1,4 @@
-"""Private, deterministic nearby-arcade lookup and administrator editing."""
+"""Chat-scoped nearby-arcade lookup and private administrator editing."""
 
 import asyncio
 import contextlib
@@ -75,11 +75,12 @@ class Arcades(Star):
         text = event.message_str.strip().removeprefix('/').strip()
         commands = {a + g: (a, g) for a in ("查", "增加", "删除") for g in GAMES}
         if not event.is_private_chat():
-            if text in commands or text in ("取消音游操作", "恢复音游同步", "音游地图状态", "确认添加") or text.startswith("确认删除 "):
+            if (text in commands and commands[text][0] != "查") or text in ("恢复音游同步", "音游地图状态", "确认添加") or text.startswith("确认删除 "):
                 event.stop_event()
-                await event.send(event.plain_result("该插件在群聊被禁用，请在私聊中使用"))
-            return
-        key = (platform, user)
+                await event.send(event.plain_result("管理操作请在私聊中使用"))
+                return
+        scope = 'private' if event.is_private_chat() else 'group:' + str(event.get_group_id())
+        key = (platform, scope, user)
         now = time.monotonic()
         self.sessions = {k: v for k, v in self.sessions.items() if v["expires"] > now}
         if text in commands:
@@ -100,7 +101,7 @@ class Arcades(Star):
             )
             prompt = DATA_NOTICE
             prompt += "发送位置信息" if action == "查" else "发送位置信息或文字信息"
-            prompt += "\n请在 3 分钟内私聊发送 QQ“位置”卡片；发送“取消音游操作”退出"
+            prompt += "\n请在 3 分钟内在当前聊天发送 QQ“位置”卡片；发送“取消音游操作”退出"
             if action == "增加":
                 prompt += "\n文字格式：店名 | 完整地址 | 纬度,经度\n也可省略坐标，通过高德解析后确认添加"
             elif action == "删除":
@@ -149,6 +150,8 @@ class Arcades(Star):
             await event.send(event.plain_result("\n".join(lines)))
             return
         state = self.sessions.get(key)
+        if not state and not event.is_private_chat():
+            return
         try:
             location = from_components(event.get_messages())
         except ValueError as exc:
@@ -163,9 +166,6 @@ class Arcades(Star):
                 )
             return
         event.stop_event()
-        if not event.is_private_chat():
-            await event.send(event.plain_result("请在私聊中继续发送位置或文字信息"))
-            return
         if state["action"] != "查" and not event.is_admin():
             self.sessions.pop(key, None)
             await event.send(

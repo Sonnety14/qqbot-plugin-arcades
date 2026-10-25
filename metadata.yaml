@@ -1,6 +1,6 @@
 name: astrbot_plugin_arcades
 display_name: 附近音游机厅
-desc: 私聊发送位置，查询附近舞萌DX或中二节奏机厅；支持管理员维护与nearcade同步
+desc: 群聊或私聊发送位置，查询附近舞萌DX或中二节奏机厅；支持管理员维护与nearcade同步
 version: v0.6.3
 author: Sonnety14
 astrbot_version: '>=4.28.2'
